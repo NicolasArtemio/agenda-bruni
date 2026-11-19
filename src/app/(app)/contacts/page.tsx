@@ -6,6 +6,7 @@ import { buildContactWhere, contactInclude } from "@/lib/contacts";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { getSpecialtyTree } from "@/lib/specialties";
+import { getStickerList } from "@/lib/stickers";
 import { contactFiltersSchema } from "@/lib/validation/contact";
 
 type ContactsPageProps = {
@@ -33,7 +34,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
 
   const where = await buildContactWhere(user.userId, filters);
 
-  const [items, total, specialtyTree] = await Promise.all([
+  const [items, total, specialtyTree, stickers] = await Promise.all([
     prisma.contact.findMany({
       where,
       skip: (filters.page - 1) * filters.limit,
@@ -43,6 +44,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
     }),
     prisma.contact.count({ where }),
     getSpecialtyTree(user.userId),
+    getStickerList(user.userId),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
@@ -62,7 +64,12 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
         </Link>
       </div>
 
-      <ContactFilters values={filters} specialties={specialtyTree} />
+      <ContactFilters
+        values={filters}
+        specialties={specialtyTree}
+        stickers={stickers}
+        action="/contacts"
+      />
       <ContactList items={items} />
       <Pagination page={filters.page} totalPages={totalPages} total={total} searchParams={raw} />
     </div>

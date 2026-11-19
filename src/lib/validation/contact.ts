@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isProvince } from "@/lib/provinces";
 
 const optionalText = z.string().trim().max(120, "El texto no puede superar los 120 caracteres.");
 const emailField = z.string()
@@ -7,6 +8,24 @@ const emailField = z.string()
   .email("Ingrese un correo electrónico válido.")
   .max(120, "El correo electrónico no puede superar los 120 caracteres.");
 const specialtyIdField = z.string().trim().min(1, "Seleccione una especialidad.");
+const stickerIdField = z.string().trim().min(1, "Seleccione un sticker.");
+
+const provinceField = z
+  .string()
+  .trim()
+  .nullable()
+  .optional()
+  .transform((value) => (value === "" ? null : value))
+  .refine((value) => value === null || value === undefined || isProvince(value), {
+    message: "Seleccione una provincia válida.",
+  });
+
+const notesField = z
+  .string()
+  .trim()
+  .max(200, "Las notas no pueden superar los 200 caracteres.")
+  .nullable()
+  .optional();
 
 export const contactCreateSchema = z.object({
   name: z.string()
@@ -17,7 +36,10 @@ export const contactCreateSchema = z.object({
   email: emailField.optional(),
   company: optionalText.optional(),
   city: optionalText.optional(),
+  province: provinceField,
+  notes: notesField,
   specialtyId: specialtyIdField.nullable().optional(),
+  stickerId: stickerIdField.nullable().optional(),
   isFavorite: z.boolean().optional().default(false),
 });
 
@@ -32,7 +54,10 @@ export const contactUpdateSchema = z
     email: emailField.optional(),
     company: optionalText.optional(),
     city: optionalText.optional(),
+    province: provinceField,
+    notes: notesField,
     specialtyId: specialtyIdField.nullable().optional(),
+    stickerId: stickerIdField.nullable().optional(),
     isFavorite: z.boolean().optional(),
   })
   .refine((value) => Object.values(value).some((field) => field !== undefined), {
@@ -44,6 +69,8 @@ export const contactFiltersSchema = z.object({
   company: z.string().trim().optional(),
   city: z.string().trim().optional(),
   specialtyId: z.string().trim().optional(),
+  province: z.string().trim().optional(),
+  stickerId: z.string().trim().optional(),
   page: z.coerce
     .number()
     .int("Debe ser un número entero.")

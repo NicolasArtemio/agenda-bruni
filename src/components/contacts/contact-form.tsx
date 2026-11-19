@@ -3,16 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { SpecialtyPicker } from "@/components/contacts/specialty-picker";
+import { StickerPicker } from "@/components/contacts/sticker-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ContactWithSpecialty } from "@/lib/contacts";
+import { PROVINCES } from "@/lib/provinces";
 import type { SpecialtyTreeNode } from "@/lib/specialties";
+import type { StickerSummary } from "@/lib/sticker-colors";
 import { contactCreateSchema, contactUpdateSchema } from "@/lib/validation/contact";
 
 type ContactFormProps = {
   specialties: SpecialtyTreeNode[];
+  stickers: StickerSummary[];
   contact?: ContactWithSpecialty;
   mode: "create" | "edit";
 };
@@ -22,14 +26,20 @@ type ErrorResponse = {
   error?: { message?: string };
 };
 
-export function ContactForm({ specialties, contact, mode }: ContactFormProps) {
+const selectClassName =
+  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60";
+
+export function ContactForm({ specialties, stickers, contact, mode }: ContactFormProps) {
   const router = useRouter();
   const [name, setName] = useState(contact?.name ?? "");
   const [phone, setPhone] = useState(contact?.phone ?? "");
   const [email, setEmail] = useState(contact?.email ?? "");
   const [company, setCompany] = useState(contact?.company ?? "");
   const [city, setCity] = useState(contact?.city ?? "");
+  const [province, setProvince] = useState(contact?.province ?? "");
+  const [notes, setNotes] = useState(contact?.notes ?? "");
   const [specialtyId, setSpecialtyId] = useState(contact?.specialtyId ?? "");
+  const [stickerId, setStickerId] = useState(contact?.stickerId ?? "");
   const [isFavorite, setIsFavorite] = useState(contact?.isFavorite ?? false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,7 +54,10 @@ export function ContactForm({ specialties, contact, mode }: ContactFormProps) {
       email: email.trim() || undefined,
       company: company.trim() || undefined,
       city: city.trim() || undefined,
+      province: province || null,
+      notes: notes.trim() || null,
       specialtyId: specialtyId || null,
+      stickerId: stickerId || null,
       isFavorite,
     };
 
@@ -161,6 +174,39 @@ export function ContactForm({ specialties, contact, mode }: ContactFormProps) {
                 onChange={(event) => setCity(event.target.value)}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="province">Provincia</Label>
+              <select
+                id="province"
+                name="province"
+                className={selectClassName}
+                value={province}
+                onChange={(event) => setProvince(event.target.value)}
+              >
+                <option value="">Sin provincia</option>
+                {PROVINCES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notas</Label>
+            <textarea
+              id="notes"
+              name="notes"
+              maxLength={200}
+              rows={3}
+              placeholder="Información adicional sobre el contacto"
+              className={`${selectClassName} min-h-[4.5rem] resize-y`}
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+            />
+            <p className="text-right text-xs text-slate-500">{notes.length}/200</p>
           </div>
 
           <div className="space-y-2">
@@ -172,6 +218,17 @@ export function ContactForm({ specialties, contact, mode }: ContactFormProps) {
               name="specialtyId"
               id="specialty"
               includeAny={false}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sticker">Sticker</Label>
+            <StickerPicker
+              stickers={stickers}
+              value={stickerId}
+              onChange={setStickerId}
+              name="stickerId"
+              id="sticker"
             />
           </div>
 

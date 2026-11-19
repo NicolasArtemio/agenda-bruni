@@ -3,6 +3,7 @@ import { contactInclude } from "@/lib/contacts";
 import { prisma } from "@/lib/prisma";
 import { requireApiUser } from "@/lib/session";
 import { assertValidSpecialty } from "@/lib/specialties";
+import { assertValidSticker } from "@/lib/stickers";
 import { contactUpdateSchema } from "@/lib/validation/contact";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -35,6 +36,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     if (data.specialtyId !== undefined) {
       await assertValidSpecialty(data.specialtyId, user.userId);
+    }
+
+    if (data.stickerId !== undefined) {
+      await assertValidSticker(data.stickerId, user.userId);
     }
 
     // updateMany cannot touch a row owned by another user.

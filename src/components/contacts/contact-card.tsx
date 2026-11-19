@@ -2,6 +2,7 @@ import { Building2, Mail, MapPin, MessageCircle, Pencil, Phone } from "lucide-re
 import Link from "next/link";
 import { DeleteContactButton } from "@/components/contacts/delete-contact-button";
 import { FavoriteButton } from "@/components/contacts/favorite-button";
+import { StickerChip } from "@/components/contacts/sticker-chip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContactWithSpecialty } from "@/lib/contacts";
 import { capitalizeWords } from "@/lib/utils";
@@ -24,6 +25,7 @@ export function ContactCard({ contact }: ContactCardProps) {
   const label = specialtyLabel(contact);
   const displayName = capitalizeWords(contact.name);
   const whatsappDigits = (contact.phone ?? "").replace(/\D/g, "");
+  const location = [contact.city, contact.province].filter(Boolean).join(", ");
 
   return (
     <Card className="flex h-full min-w-0 flex-col overflow-hidden transition-shadow hover:shadow-md">
@@ -32,13 +34,18 @@ export function ContactCard({ contact }: ContactCardProps) {
           <CardTitle className="truncate text-lg" title={contact.name}>
             {displayName}
           </CardTitle>
-          {label ? (
-            <span
-              className="mt-1 inline-flex max-w-full items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
-              title={label}
-            >
-              <span className="truncate">{label}</span>
-            </span>
+          {label || contact.sticker ? (
+            <div className="mt-1 flex flex-wrap items-center gap-1">
+              {label ? (
+                <span
+                  className="inline-flex max-w-full items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                  title={label}
+                >
+                  <span className="truncate">{label}</span>
+                </span>
+              ) : null}
+              {contact.sticker ? <StickerChip sticker={contact.sticker} /> : null}
+            </div>
           ) : null}
         </div>
         <FavoriteButton contactId={contact.id} initialFavorite={contact.isFavorite} />
@@ -95,15 +102,21 @@ export function ContactCard({ contact }: ContactCardProps) {
               </span>
             </li>
           ) : null}
-          {contact.city ? (
+          {location ? (
             <li className="flex min-w-0 items-center gap-2">
               <MapPin className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate" title={contact.city}>
-                {contact.city}
+              <span className="min-w-0 flex-1 truncate" title={location}>
+                {location}
               </span>
             </li>
           ) : null}
         </ul>
+
+        {contact.notes ? (
+          <p className="line-clamp-2 text-xs text-slate-500" title={contact.notes}>
+            {contact.notes}
+          </p>
+        ) : null}
 
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
           <time

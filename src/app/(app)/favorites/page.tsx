@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { ContactFilters } from "@/components/contacts/contact-filters";
 import { ContactList } from "@/components/contacts/contact-list";
 import { Pagination } from "@/components/contacts/pagination";
-import { contactInclude } from "@/lib/contacts";
+import { buildContactWhere, contactInclude } from "@/lib/contacts";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { getSpecialtyTree } from "@/lib/specialties";
+import { getStickerList } from "@/lib/stickers";
 import { contactFiltersSchema } from "@/lib/validation/contact";
 
 type FavoritesPageProps = {
@@ -29,9 +32,9 @@ export default async function FavoritesPage({ searchParams }: FavoritesPageProps
   const parsed = contactFiltersSchema.safeParse(Object.fromEntries(params.entries()));
   const filters = parsed.success ? parsed.data : contactFiltersSchema.parse({});
 
-  const where = { userId: user.userId, isFavorite: true };
+  const where = { ...(await buildContactWhere(user.userId, filters)), isFavorite: true };
 
-  const [items, total] = await Promise.all([
+  const [items, total, specialtyTree, stickers] = await Promise.all([
     prisma.contact.findMany({
       where,
       skip: (filters.page - 1) * filters.limit,
@@ -40,6 +43,8 @@ export default async function FavoritesPage({ searchParams }: FavoritesPageProps
       include: contactInclude,
     }),
     prisma.contact.count({ where }),
+    getSpecialtyTree(user.userId),
+    getStickerList(user.userId),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
@@ -59,6 +64,12 @@ export default async function FavoritesPage({ searchParams }: FavoritesPageProps
         </Link>
       </div>
 
+      <ContactFilters
+        values={filters}
+        specialties={specialtyTree}
+        stickers={stickers}
+        action="/favorites"
+      />
       <ContactList items={items} emptyMessage="Todavía no hay contactos favoritos" />
       <Pagination
         page={filters.page}

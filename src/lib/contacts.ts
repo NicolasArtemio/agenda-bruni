@@ -1,11 +1,14 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { NO_STICKER_FILTER } from "@/lib/sticker-colors";
 
 type ContactFilterValues = {
   q?: string;
   company?: string;
   city?: string;
   specialtyId?: string;
+  province?: string;
+  stickerId?: string;
 };
 
 export async function buildContactWhere(
@@ -22,6 +25,12 @@ export async function buildContactWhere(
   }
   if (filters.city) {
     where.city = { contains: filters.city, mode: "insensitive" };
+  }
+  if (filters.province) {
+    where.province = filters.province;
+  }
+  if (filters.stickerId) {
+    where.stickerId = filters.stickerId === NO_STICKER_FILTER ? null : filters.stickerId;
   }
   if (filters.specialtyId) {
     const specialty = await prisma.specialty.findFirst({
@@ -43,8 +52,12 @@ export async function buildContactWhere(
 
 export const contactInclude = {
   specialty: { include: { parent: true } },
+  sticker: { select: { id: true, name: true, color: true } },
 } as const satisfies Prisma.ContactInclude;
 
 export type ContactWithSpecialty = Prisma.ContactGetPayload<{
-  include: { specialty: { include: { parent: true } } };
+  include: {
+    specialty: { include: { parent: true } };
+    sticker: { select: { id: true; name: true; color: true } };
+  };
 }>;

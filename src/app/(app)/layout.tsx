@@ -35,6 +35,9 @@ export default async function AppLayout({ children }: Readonly<{ children: React
             <Link href="/specialties" className="text-slate-600 hover:text-slate-900">
               Especialidades
             </Link>
+            <Link href="/stickers" className="text-slate-600 hover:text-slate-900">
+              Stickers
+            </Link>
           </nav>
         </div>
       </header>

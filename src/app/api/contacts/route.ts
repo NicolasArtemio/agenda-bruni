@@ -4,6 +4,7 @@ import { buildContactWhere, contactInclude } from "@/lib/contacts";
 import { prisma } from "@/lib/prisma";
 import { requireApiUser } from "@/lib/session";
 import { assertValidSpecialty } from "@/lib/specialties";
+import { assertValidSticker } from "@/lib/stickers";
 import { contactCreateSchema, contactFiltersSchema } from "@/lib/validation/contact";
 
 export async function GET(request: NextRequest) {
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
     const data = await readJson(request, contactCreateSchema);
 
     await assertValidSpecialty(data.specialtyId, user.userId);
+    await assertValidSticker(data.stickerId, user.userId);
 
     const contact = await prisma.contact.create({
       data: { ...data, userId: user.userId },
