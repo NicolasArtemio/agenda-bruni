@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ContactForm } from "@/components/contacts/contact-form";
 import { DeleteContactButton } from "@/components/contacts/delete-contact-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { contactInclude } from "@/lib/contacts";
+import { contactInclude, toContactView } from "@/lib/contacts";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { getSpecialtyTree } from "@/lib/specialties";
@@ -24,6 +24,8 @@ export default async function EditContactPage({ params }: ContactPageProps) {
   if (!contact) {
     notFound();
   }
+
+  const mappedContact = toContactView(contact);
 
   const [specialties, stickers] = await Promise.all([
     getSpecialtyTree(user.userId),
@@ -51,7 +53,7 @@ export default async function EditContactPage({ params }: ContactPageProps) {
           </CardContent>
         </Card>
       ) : null}
-      <ContactForm mode="edit" contact={contact} specialties={specialties} stickers={stickers} />
+      <ContactForm mode="edit" contact={mappedContact} specialties={specialties} stickers={stickers} />
     </div>
   );
 }

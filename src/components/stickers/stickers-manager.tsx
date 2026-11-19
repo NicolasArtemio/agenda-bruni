@@ -117,7 +117,7 @@ export function StickersManager({ stickers }: StickersManagerProps) {
   async function remove(id: string, stickerName: string) {
     if (
       !window.confirm(
-        `¿Eliminar el sticker "${stickerName}"? Los contactos que lo tengan quedarán sin sticker.`,
+        `¿Eliminar el sticker "${stickerName}"? Se quitará de todos los contactos, pero los contactos no se eliminarán.`,
       ) ||
       busy
     ) {

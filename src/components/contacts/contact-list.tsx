@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ContactCard } from "@/components/contacts/contact-card";
 import { Card, CardContent } from "@/components/ui/card";
-import type { ContactWithSpecialty } from "@/lib/contacts";
+import type { ContactView } from "@/lib/contacts";
 
 type ContactListProps = {
-  items: ContactWithSpecialty[];
+  items: ContactView[];
   emptyMessage?: string;
 };
 

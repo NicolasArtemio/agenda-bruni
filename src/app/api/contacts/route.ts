@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
 import { fail, handleApiError, ok, readJson } from "@/lib/api-response";
-import { buildContactWhere, contactInclude } from "@/lib/contacts";
+import { createContactForUser } from "@/lib/contact-service";
+import { buildContactWhere, contactInclude, toContactView } from "@/lib/contacts";
 import { prisma } from "@/lib/prisma";
 import { requireApiUser } from "@/lib/session";
-import { assertValidSpecialty } from "@/lib/specialties";
-import { assertValidSticker } from "@/lib/stickers";
+import { assertValidStickers, NO_STICKER_FILTER } from "@/lib/stickers";
 import { contactCreateSchema, contactFiltersSchema } from "@/lib/validation/contact";
 
 export async function GET(request: NextRequest) {
@@ -19,6 +19,12 @@ export async function GET(request: NextRequest) {
     }
 
     const { page, limit } = parsed.data;
+
+    await assertValidStickers(
+      parsed.data.stickers.filter((id) => id !== NO_STICKER_FILTER),
+      user.userId,
+    );
+
     const where = await buildContactWhere(user.userId, parsed.data);
 
     const [items, total] = await Promise.all([
@@ -33,7 +39,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     return ok({
-      items,
+      items: items.map(toContactView),
       total,
       page,
       limit,
@@ -49,13 +55,7 @@ export async function POST(request: NextRequest) {
     const user = await requireApiUser();
     const data = await readJson(request, contactCreateSchema);
 
-    await assertValidSpecialty(data.specialtyId, user.userId);
-    await assertValidSticker(data.stickerId, user.userId);
-
-    const contact = await prisma.contact.create({
-      data: { ...data, userId: user.userId },
-      include: contactInclude,
-    });
+    const contact = await createContactForUser(user.userId, data);
 
     return ok(contact, 201);
   } catch (error) {

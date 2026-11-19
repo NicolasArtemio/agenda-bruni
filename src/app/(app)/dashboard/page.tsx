@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ContactList } from "@/components/contacts/contact-list";
 import { StatsCards } from "@/components/dashboard/stats-cards";
-import { contactInclude } from "@/lib/contacts";
+import { contactInclude, toContactView } from "@/lib/contacts";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
             Ver todos los contactos
           </Link>
         </div>
-        <ContactList items={recent} />
+        <ContactList items={recent.map(toContactView)} />
       </section>
     </div>
   );

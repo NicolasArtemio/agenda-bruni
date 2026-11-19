@@ -8,7 +8,10 @@ const emailField = z.string()
   .email("Ingrese un correo electrónico válido.")
   .max(120, "El correo electrónico no puede superar los 120 caracteres.");
 const specialtyIdField = z.string().trim().min(1, "Seleccione una especialidad.");
-const stickerIdField = z.string().trim().min(1, "Seleccione un sticker.");
+const stickerIdsField = z
+  .array(z.string().trim().min(1, "Seleccione un sticker válido."))
+  .max(5, "Puede seleccionar hasta 5 stickers.")
+  .refine((ids) => new Set(ids).size === ids.length, "No puede repetir stickers.");
 
 const provinceField = z
   .string()
@@ -39,7 +42,7 @@ export const contactCreateSchema = z.object({
   province: provinceField,
   notes: notesField,
   specialtyId: specialtyIdField.nullable().optional(),
-  stickerId: stickerIdField.nullable().optional(),
+  stickerIds: stickerIdsField.default([]),
   isFavorite: z.boolean().optional().default(false),
 });
 
@@ -57,7 +60,7 @@ export const contactUpdateSchema = z
     province: provinceField,
     notes: notesField,
     specialtyId: specialtyIdField.nullable().optional(),
-    stickerId: stickerIdField.nullable().optional(),
+    stickerIds: stickerIdsField.optional(),
     isFavorite: z.boolean().optional(),
   })
   .refine((value) => Object.values(value).some((field) => field !== undefined), {
@@ -70,7 +73,20 @@ export const contactFiltersSchema = z.object({
   city: z.string().trim().optional(),
   specialtyId: z.string().trim().optional(),
   province: z.string().trim().optional(),
-  stickerId: z.string().trim().optional(),
+  stickers: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) =>
+      Array.from(
+        new Set(
+          (value ?? "")
+            .split(",")
+            .map((id) => id.trim())
+            .filter((id) => id.length > 0),
+        ),
+      ),
+    ),
   page: z.coerce
     .number()
     .int("Debe ser un número entero.")

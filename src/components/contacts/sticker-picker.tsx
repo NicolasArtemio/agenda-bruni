@@ -10,16 +10,13 @@ import { cn } from "@/lib/utils";
 
 type StickerPickerProps = {
   stickers: StickerSummary[];
-  value: string;
-  onChange: (id: string) => void;
-  name?: string;
+  value: string[];
+  onChange: (ids: string[]) => void;
+  max?: number;
   id?: string;
 };
 
 type ApiEnvelope<T> = { ok: true; data: T } | { ok: false; error?: { message?: string } };
-
-const selectClassName =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60";
 
 const smallButtonClassName =
   "rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60";
@@ -28,7 +25,7 @@ export function StickerPicker({
   stickers,
   value,
   onChange,
-  name = "stickerId",
+  max = 5,
   id,
 }: StickerPickerProps) {
   const [items, setItems] = useState<StickerSummary[]>(stickers);
@@ -38,14 +35,21 @@ export function StickerPicker({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectId = id ?? name;
-  const inputId = `${selectId}-new-name`;
+  const baseId = id ?? "stickers";
+  const inputId = `${baseId}-new-name`;
+  const atLimit = value.length >= max;
 
   useEffect(() => {
     setItems(stickers);
   }, [stickers]);
 
-  const selected = items.find((sticker) => sticker.id === value);
+  function toggle(stickerId: string) {
+    if (value.includes(stickerId)) {
+      onChange(value.filter((idValue) => idValue !== stickerId));
+    } else if (!atLimit) {
+      onChange([...value, stickerId]);
+    }
+  }
 
   function openCreation() {
     setCreating(true);
@@ -85,7 +89,11 @@ export function StickerPicker({
 
       const created = result.data;
       setItems((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name, "es")));
-      onChange(created.id);
+
+      if (!atLimit) {
+        onChange([...value, created.id]);
+      }
+
       closeCreation();
     } catch {
       setError("No se pudo conectar con el servidor. Inténtelo de nuevo.");
@@ -105,31 +113,56 @@ export function StickerPicker({
 
   return (
     <div className="space-y-2">
-      <select
-        id={selectId}
-        name={name}
-        className={selectClassName}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        disabled={saving}
+      <div
+        role="group"
+        aria-label="Stickers del contacto"
+        className="flex flex-wrap items-center gap-2"
       >
-        <option value="">Sin sticker</option>
-        {items.map((sticker) => (
-          <option key={sticker.id} value={sticker.id}>
-            {sticker.name}
-          </option>
-        ))}
-      </select>
+        {items.length === 0 ? (
+          <p className="text-sm text-slate-500">Todavía no hay stickers. Cree uno debajo.</p>
+        ) : null}
+        {items.map((sticker) => {
+          const selected = value.includes(sticker.id);
+          const disabled = saving || (!selected && atLimit);
 
-      {selected ? (
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
-            stickerChipClassName(selected.color),
-          )}
-        >
-          {selected.name}
-        </span>
+          return (
+            <button
+              key={sticker.id}
+              type="button"
+              aria-pressed={selected}
+              disabled={disabled}
+              onClick={() => toggle(sticker.id)}
+              title={
+                disabled
+                  ? "Llegó al máximo de stickers. Quite uno para agregar otro."
+                  : selected
+                    ? "Quitar este sticker"
+                    : "Agregar este sticker"
+              }
+              className={cn(
+                "inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+                stickerChipClassName(sticker.color),
+                selected
+                  ? "ring-2 ring-slate-900 ring-offset-1"
+                  : "opacity-80 hover:opacity-100",
+                disabled && "cursor-not-allowed opacity-40",
+              )}
+            >
+              {selected ? <span aria-hidden="true">✓</span> : null}
+              <span className="truncate">{sticker.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-slate-500">
+        {value.length} de {max} stickers seleccionados.
+      </p>
+
+      {atLimit ? (
+        <p role="status" className="text-xs font-medium text-amber-700">
+          Llegó al máximo de {max} stickers. Quite uno para agregar otro.
+        </p>
       ) : null}
 
       <div>

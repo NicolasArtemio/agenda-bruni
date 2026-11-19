@@ -15,7 +15,12 @@ export function StickerChip({ sticker }: StickerChipProps) {
   const searchParams = useSearchParams();
 
   const params = new URLSearchParams(searchParams.toString());
-  params.set("stickerId", sticker.id);
+  const selected = (searchParams.get("stickers") ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+  const next = Array.from(new Set([...selected, sticker.id]));
+  params.set("stickers", next.join(","));
   params.delete("page");
 
   const href = params.toString().length > 0 ? `${pathname}?${params.toString()}` : pathname;

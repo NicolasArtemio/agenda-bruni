@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ContactWithSpecialty } from "@/lib/contacts";
+import type { ContactView } from "@/lib/contacts";
 import { PROVINCES } from "@/lib/provinces";
 import type { SpecialtyTreeNode } from "@/lib/specialties";
 import type { StickerSummary } from "@/lib/sticker-colors";
@@ -17,7 +17,7 @@ import { contactCreateSchema, contactUpdateSchema } from "@/lib/validation/conta
 type ContactFormProps = {
   specialties: SpecialtyTreeNode[];
   stickers: StickerSummary[];
-  contact?: ContactWithSpecialty;
+  contact?: ContactView;
   mode: "create" | "edit";
 };
 
@@ -39,7 +39,9 @@ export function ContactForm({ specialties, stickers, contact, mode }: ContactFor
   const [province, setProvince] = useState(contact?.province ?? "");
   const [notes, setNotes] = useState(contact?.notes ?? "");
   const [specialtyId, setSpecialtyId] = useState(contact?.specialtyId ?? "");
-  const [stickerId, setStickerId] = useState(contact?.stickerId ?? "");
+  const [stickerIds, setStickerIds] = useState<string[]>(
+    contact?.stickers.map((sticker) => sticker.id) ?? [],
+  );
   const [isFavorite, setIsFavorite] = useState(contact?.isFavorite ?? false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,7 +59,7 @@ export function ContactForm({ specialties, stickers, contact, mode }: ContactFor
       province: province || null,
       notes: notes.trim() || null,
       specialtyId: specialtyId || null,
-      stickerId: stickerId || null,
+      stickerIds,
       isFavorite,
     };
 
@@ -221,16 +223,16 @@ export function ContactForm({ specialties, stickers, contact, mode }: ContactFor
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="sticker">Sticker</Label>
+          <fieldset className="space-y-2">
+            <legend className="block text-sm font-medium text-slate-700">Stickers</legend>
             <StickerPicker
               stickers={stickers}
-              value={stickerId}
-              onChange={setStickerId}
-              name="stickerId"
-              id="sticker"
+              value={stickerIds}
+              onChange={setStickerIds}
+              max={5}
+              id="stickers"
             />
-          </div>
+          </fieldset>
 
           <div className="flex items-center gap-2">
             <input

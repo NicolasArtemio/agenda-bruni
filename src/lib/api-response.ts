@@ -32,7 +32,10 @@ export function handleApiError(error: unknown) {
   return fail("INTERNAL_ERROR", "Error inesperado.", 500);
 }
 
-export async function readJson<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
+export async function readJson<S extends z.ZodTypeAny>(
+  request: Request,
+  schema: S,
+): Promise<z.infer<S>> {
   let body: unknown;
 
   try {

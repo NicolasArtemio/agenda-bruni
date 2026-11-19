@@ -39,8 +39,8 @@ model Sticker {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   color     String
-  createdAt DateTime  @default(now())
-  contacts  Contact[]
+  createdAt DateTime         @default(now())
+  contacts  ContactSticker[]
 
   @@unique([userId, name])
   @@index([userId])
@@ -60,8 +60,7 @@ model Contact {
   isFavorite  Boolean    @default(false)
   specialtyId String?
   specialty   Specialty? @relation(fields: [specialtyId], references: [id], onDelete: SetNull)
-  stickerId   String?
-  sticker     Sticker?   @relation(fields: [stickerId], references: [id], onDelete: SetNull)
+  stickers    ContactSticker[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -72,5 +71,14 @@ model Contact {
   @@index([userId, specialtyId])
   @@index([userId, isFavorite])
   @@index([userId, province])
-  @@index([userId, stickerId])
+}
+
+model ContactSticker {
+  contactId String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  stickerId String
+  sticker   Sticker @relation(fields: [stickerId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, stickerId])
+  @@index([stickerId])
 }

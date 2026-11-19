@@ -1,4 +1,3 @@
-import type { Sticker } from "@prisma/client";
 import { ApiError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import type { StickerSummary } from "@/lib/sticker-colors";
@@ -24,23 +23,23 @@ export function getStickerList(userId: string): Promise<StickerSummary[]> {
   });
 }
 
-export async function assertValidSticker(
-  stickerId: string | null | undefined,
+export async function assertValidStickers(
+  stickerIds: string[],
   userId: string,
-): Promise<Sticker | null> {
-  if (!stickerId) {
-    return null;
+): Promise<void> {
+  const unique = Array.from(new Set(stickerIds));
+
+  if (unique.length === 0) {
+    return;
   }
 
-  const sticker = await prisma.sticker.findFirst({
-    where: { id: stickerId, userId },
+  const count = await prisma.sticker.count({
+    where: { id: { in: unique }, userId },
   });
 
-  if (!sticker) {
+  if (count !== unique.length) {
     throw new ApiError("NOT_FOUND", "Sticker no encontrado.", 404);
   }
-
-  return sticker;
 }
 
 export async function assertUniqueStickerName(

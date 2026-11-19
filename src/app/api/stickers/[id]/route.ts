@@ -53,7 +53,8 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     const user = await requireApiUser();
     const { id } = await params;
 
-    // The ON DELETE SET NULL foreign key clears contact.stickerId.
+    // The ON DELETE CASCADE foreign key removes the contact-sticker links,
+    // but the contacts themselves are kept.
     const result = await prisma.sticker.deleteMany({
       where: { id, userId: user.userId },
     });

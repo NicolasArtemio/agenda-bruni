@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ContactFilters } from "@/components/contacts/contact-filters";
 import { ContactList } from "@/components/contacts/contact-list";
 import { Pagination } from "@/components/contacts/pagination";
-import { buildContactWhere, contactInclude } from "@/lib/contacts";
+import { buildContactWhere, contactInclude, toContactView } from "@/lib/contacts";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { getSpecialtyTree } from "@/lib/specialties";
@@ -34,7 +34,7 @@ export default async function FavoritesPage({ searchParams }: FavoritesPageProps
 
   const where = { ...(await buildContactWhere(user.userId, filters)), isFavorite: true };
 
-  const [items, total, specialtyTree, stickers] = await Promise.all([
+  const [records, total, specialtyTree, stickers] = await Promise.all([
     prisma.contact.findMany({
       where,
       skip: (filters.page - 1) * filters.limit,
@@ -48,6 +48,7 @@ export default async function FavoritesPage({ searchParams }: FavoritesPageProps
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / filters.limit));
+  const items = records.map(toContactView);
 
   return (
     <div className="space-y-6">

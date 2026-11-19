@@ -1,14 +1,14 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { NO_STICKER_FILTER } from "@/lib/sticker-colors";
+import { NO_STICKER_FILTER, type StickerSummary } from "@/lib/sticker-colors";
 
-type ContactFilterValues = {
+export type ContactFilterValues = {
   q?: string;
   company?: string;
   city?: string;
   specialtyId?: string;
   province?: string;
-  stickerId?: string;
+  stickers?: string[];
 };
 
 export async function buildContactWhere(
@@ -29,9 +29,28 @@ export async function buildContactWhere(
   if (filters.province) {
     where.province = filters.province;
   }
-  if (filters.stickerId) {
-    where.stickerId = filters.stickerId === NO_STICKER_FILTER ? null : filters.stickerId;
+
+  const stickerFilter = filters.stickers ?? [];
+  const stickerIds = Array.from(
+    new Set(stickerFilter.filter((id) => id !== NO_STICKER_FILTER)),
+  );
+  const wantsNoSticker = stickerFilter.includes(NO_STICKER_FILTER);
+
+  if (stickerIds.length > 0 || wantsNoSticker) {
+    where.OR = [
+      ...(stickerIds.length > 0
+        ? [
+            {
+              stickers: {
+                some: { stickerId: { in: stickerIds }, sticker: { userId } },
+              },
+            },
+          ]
+        : []),
+      ...(wantsNoSticker ? [{ stickers: { none: {} } }] : []),
+    ];
   }
+
   if (filters.specialtyId) {
     const specialty = await prisma.specialty.findFirst({
       where: { id: filters.specialtyId, userId },
@@ -52,12 +71,23 @@ export async function buildContactWhere(
 
 export const contactInclude = {
   specialty: { include: { parent: true } },
-  sticker: { select: { id: true, name: true, color: true } },
+  stickers: {
+    include: { sticker: { select: { id: true, name: true, color: true } } },
+    orderBy: { sticker: { name: "asc" } },
+  },
 } as const satisfies Prisma.ContactInclude;
 
-export type ContactWithSpecialty = Prisma.ContactGetPayload<{
-  include: {
-    specialty: { include: { parent: true } };
-    sticker: { select: { id: true; name: true; color: true } };
+export type ContactRecord = Prisma.ContactGetPayload<{ include: typeof contactInclude }>;
+
+export type ContactView = Omit<ContactRecord, "stickers"> & {
+  stickers: StickerSummary[];
+};
+
+export function toContactView(contact: ContactRecord): ContactView {
+  const { stickers, ...rest } = contact;
+
+  return {
+    ...rest,
+    stickers: stickers.map((link) => link.sticker),
   };
-}>;
+}

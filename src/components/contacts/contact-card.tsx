@@ -4,14 +4,14 @@ import { DeleteContactButton } from "@/components/contacts/delete-contact-button
 import { FavoriteButton } from "@/components/contacts/favorite-button";
 import { StickerChip } from "@/components/contacts/sticker-chip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ContactWithSpecialty } from "@/lib/contacts";
+import type { ContactView } from "@/lib/contacts";
 import { capitalizeWords } from "@/lib/utils";
 
 type ContactCardProps = {
-  contact: ContactWithSpecialty;
+  contact: ContactView;
 };
 
-function specialtyLabel(contact: ContactWithSpecialty): string | null {
+function specialtyLabel(contact: ContactView): string | null {
   const { specialty } = contact;
 
   if (!specialty) {
@@ -26,6 +26,8 @@ export function ContactCard({ contact }: ContactCardProps) {
   const displayName = capitalizeWords(contact.name);
   const whatsappDigits = (contact.phone ?? "").replace(/\D/g, "");
   const location = [contact.city, contact.province].filter(Boolean).join(", ");
+  const visibleStickers = contact.stickers.slice(0, 3);
+  const extraStickers = contact.stickers.length - visibleStickers.length;
 
   return (
     <Card className="flex h-full min-w-0 flex-col overflow-hidden transition-shadow hover:shadow-md">
@@ -34,17 +36,31 @@ export function ContactCard({ contact }: ContactCardProps) {
           <CardTitle className="truncate text-lg" title={contact.name}>
             {displayName}
           </CardTitle>
-          {label || contact.sticker ? (
+          {label ? (
             <div className="mt-1 flex flex-wrap items-center gap-1">
-              {label ? (
-                <span
-                  className="inline-flex max-w-full items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
-                  title={label}
+              <span
+                className="inline-flex max-w-full items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                title={label}
+              >
+                <span className="truncate">{label}</span>
+              </span>
+            </div>
+          ) : null}
+          {visibleStickers.length > 0 ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1">
+              {visibleStickers.map((sticker) => (
+                <StickerChip key={sticker.id} sticker={sticker} />
+              ))}
+              {extraStickers > 0 ? (
+                <Link
+                  href={`/contacts/${contact.id}`}
+                  title="Ver todos los stickers"
+                  aria-label={`Ver todos los stickers (${contact.stickers.length})`}
+                  className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                 >
-                  <span className="truncate">{label}</span>
-                </span>
+                  +{extraStickers}
+                </Link>
               ) : null}
-              {contact.sticker ? <StickerChip sticker={contact.sticker} /> : null}
             </div>
           ) : null}
         </div>

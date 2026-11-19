@@ -1,9 +1,7 @@
 import { fail, handleApiError, ok, readJson } from "@/lib/api-response";
-import { contactInclude } from "@/lib/contacts";
+import { getContactForUser, updateContactForUser } from "@/lib/contact-service";
 import { prisma } from "@/lib/prisma";
 import { requireApiUser } from "@/lib/session";
-import { assertValidSpecialty } from "@/lib/specialties";
-import { assertValidSticker } from "@/lib/stickers";
 import { contactUpdateSchema } from "@/lib/validation/contact";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -13,10 +11,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     const user = await requireApiUser();
     const { id } = await params;
 
-    const contact = await prisma.contact.findFirst({
-      where: { id, userId: user.userId },
-      include: contactInclude,
-    });
+    const contact = await getContactForUser(user.userId, id);
 
     if (!contact) {
       return fail("NOT_FOUND", "Contacto no encontrado.", 404);
@@ -34,28 +29,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const { id } = await params;
     const data = await readJson(request, contactUpdateSchema);
 
-    if (data.specialtyId !== undefined) {
-      await assertValidSpecialty(data.specialtyId, user.userId);
-    }
-
-    if (data.stickerId !== undefined) {
-      await assertValidSticker(data.stickerId, user.userId);
-    }
-
-    // updateMany cannot touch a row owned by another user.
-    const result = await prisma.contact.updateMany({
-      where: { id, userId: user.userId },
-      data,
-    });
-
-    if (result.count === 0) {
-      return fail("NOT_FOUND", "Contacto no encontrado.", 404);
-    }
-
-    const contact = await prisma.contact.findFirst({
-      where: { id, userId: user.userId },
-      include: contactInclude,
-    });
+    const contact = await updateContactForUser(user.userId, id, data);
 
     if (!contact) {
       return fail("NOT_FOUND", "Contacto no encontrado.", 404);
